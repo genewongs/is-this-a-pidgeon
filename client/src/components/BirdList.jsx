@@ -1,4 +1,5 @@
 import React from 'react';
+import BirdEntry from './BirdEntry.jsx';
 
 class BirdList extends React.Component {
   constructor(props){
@@ -12,19 +13,16 @@ class BirdList extends React.Component {
       <div>
         <h1>Pidgeon Tests</h1>
           <div className="bird-list">
-            <div className="entry">
-            <div className="entry-image-wrapper">
-                <img className="entry-image" src="https://i.imgur.com/lHWTPUq.jpeg" alt="bird(?)"/>
-              </div>
-              <div className="entry-text">
-                <div className="entry-name">
-                  <h3>Pidgeon on Rock</h3>
-                </div>
-                <div className="entry-category">
-                  <h4>Is Pidgeon</h4>
-                </div>
-              </div>
-            </div>
+            {this.props.birds.map((bird,index) => {
+              return <BirdEntry
+                key={index}
+                bird={bird}
+                deleteBird={this.props.deleteBird}
+                updateStatus={this.props.updateStatus}
+                updateName={this.props.updateName}
+                likeBird={this.props.likeBird}
+              />
+            })}
           </div>
       </div>
     )

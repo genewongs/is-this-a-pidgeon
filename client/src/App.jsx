@@ -4,15 +4,25 @@ import '@tensorflow/tfjs-backend-webgl';
 import ModelLoadState from './components/ModelLoadState.jsx';
 import IsPidgeon from './components/IsPidgeon.jsx';
 import BirdList from './components/BirdList.jsx';
+const axios = require('axios');
 
 class App extends React.Component {
   constructor(props){
     super(props);
     this.state = {
       model: null,
-      imgUrl: null
+      imgUrl: null,
+      birds: [],
+      page: null,
     };
     this.imgRef = React.createRef();
+
+    this.pageRouter = this.pageRouter.bind(this);
+    this.deleteBird = this.deleteBird.bind(this);
+    this.updateStatus = this.updateStatus.bind(this);
+    this.updateName = this.updateName.bind(this);
+    this.likeBird = this.likeBird.bind(this);
+    this.addBird = this.addBird.bind(this);
   }
 
   componentDidMount() {
@@ -21,10 +31,92 @@ class App extends React.Component {
       .then(model => {
         this.setState({model});
       })
+    this.getBirds();
+  }
+
+  getBirds() {
+    axios.get('http://localhost:3000/api/tests')
+      .then(response => {
+        if(response.status === 200) {
+          this.setState({
+            birds: response.data,
+          });
+        }
+      })
+      .catch(err => console.log(err));
   }
 
   pageRouter(){
+    if(this.state.page === 'BirdList') {
+      return <BirdList
+        birds={this.state.birds}
+        deleteBird={this.deleteBird}
+        updateStatus={this.updateStatus}
+        updateName={this.updateName}
+        likeBird={this.likeBird}
+      />
+    } else if (this.state.page === 'isPidgeon') {
+      return <IsPidgeon model={this.state.model} addBird={this.addBird}/>
+    } else {
+      return <></>
+    }
+  }
 
+  updateStatus(bird) {
+    axios.patch('http://localhost:3000/api/tests/status', bird)
+      .then(res => {
+        console.log(res)
+        if(res.status === 200){
+          this.getBirds();
+        }
+      })
+      .catch(err => console.log(err));
+  }
+
+  updateName(bird) {
+    let newName= prompt('Change Name');
+    if(newName.length !== 0) {
+      axios.patch('http://localhost:3000/api/tests/name', {
+        url: bird.url,
+        name: newName
+      })
+      .then(response => {
+        if(response.status === 200) {
+          this.getBirds();
+        }
+      });
+    }
+  }
+
+  likeBird(bird) {
+    axios.patch('http://localhost:3000/api/tests/like', bird)
+      .then(res => {
+        console.log(res)
+        if(res.status === 200){
+          this.getBirds();
+        }
+      })
+      .catch(err => console.log(err));
+  }
+
+  addBird(bird) {
+    axios.post('http://localhost:3000/api/tests', bird)
+      .then(results => {
+      if(results.status === 200) {
+        this.getBirds();
+      }
+    })
+      .catch(err => console.log(err));
+  }
+
+  deleteBird(bird) {
+    axios.delete('http://localhost:3000/api/tests', {data : bird})
+      .then(res => {
+        if(res.status === 200){
+          this.getBirds();
+        }
+      })
+      .catch(err => console.log(err));
   }
 
   render () {
@@ -40,13 +132,13 @@ class App extends React.Component {
             <span className="nav-button">
             |
             </span>
-            <span className="nav-button">
+            <span onClick={() => {this.setState({page: 'isPidgeon'})}} className="nav-button">
               Pidgeon Tester
             </span>
             <span className="nav-button">
             |
             </span>
-            <span className="nav-button">
+            <span onClick={() => {this.setState({page: 'BirdList'})}} className="nav-button">
               Show Me My Birds
             </span>
           </span>
@@ -54,8 +146,7 @@ class App extends React.Component {
           <ModelLoadState model={this.state.model}/>
         </div>
         <div className="content">
-          <IsPidgeon model={this.state.model}/>
-          <BirdList />
+          {this.pageRouter()}
         </div>
       </div>
 
